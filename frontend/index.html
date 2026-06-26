@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PHC AI Supervisor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="error-banner" class="error-banner hidden">
+    Cannot connect to AI backend. Make sure python app.py is running.
+  </div>
+
+  <header class="topbar">
+    <div class="topbar-copy">
+      <p class="eyebrow">Public Health Multi-Agent System</p>
+      <h1>PHC AI Supervisor</h1>
+      <p>Rural Health Intelligence for field attendance, fraud review, and underserved zone monitoring.</p>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-chip">
+        <span>Live Demo</span>
+        <strong id="critical-zones-top">0 critical zones</strong>
+      </div>
+      <button id="refresh-button" class="refresh-button">Refresh Data</button>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-green">
+        <span>Total Workers</span>
+        <strong id="kpi-workers">0</strong>
+      </article>
+      <article class="kpi-card kpi-blue">
+        <span>Visits Today</span>
+        <strong id="kpi-visits">0</strong>
+      </article>
+      <article class="kpi-card kpi-orange">
+        <span>Flagged Visits</span>
+        <strong id="kpi-flagged">0</strong>
+      </article>
+      <article class="kpi-card kpi-red">
+        <span>Active Alerts</span>
+        <strong id="kpi-alerts">0</strong>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel alert-panel">
+        <div class="panel-header">
+          <div>
+            <p class="section-label">Monitor</p>
+            <h2>Alert Feed</h2>
+          </div>
+          <span id="critical-zones">0 critical zones</span>
+        </div>
+        <div id="alert-feed" class="alert-feed"></div>
+      </div>
+
+      <div class="panel map-panel">
+        <div class="panel-header">
+          <div>
+            <p class="section-label">Explore</p>
+            <h2>Zone Coverage</h2>
+          </div>
+          <span>7-day field view</span>
+        </div>
+        <div class="zone-toolbar">
+          <div class="toolbar-group">
+            <label for="zone-risk-filter">Risk</label>
+            <select id="zone-risk-filter">
+              <option value="all">All</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="normal">Normal</option>
+            </select>
+          </div>
+          <div class="toolbar-group">
+            <label for="zone-search">Find Zone</label>
+            <input id="zone-search" type="text" placeholder="Search by zone name">
+          </div>
+          <div class="toolbar-group zone-summary-pill">
+            <span id="zone-filter-summary">Showing all zones</span>
+          </div>
+        </div>
+        <div id="zone-map" class="zone-map"></div>
+      </div>
+    </section>
+
+    <section class="panel worker-panel">
+      <div class="panel-header">
+        <div>
+          <p class="section-label">Field Team</p>
+          <h2>Worker List</h2>
+        </div>
+        <span>Click a row to expand recent visits</span>
+      </div>
+      <div class="worker-table-wrap">
+        <table class="worker-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Zone</th>
+              <th>Visits Today</th>
+              <th>Status</th>
+              <th>Last Visit</th>
+            </tr>
+          </thead>
+          <tbody id="worker-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <button id="chat-toggle" class="chat-toggle">Supervisor Chat</button>
+  <section id="chat-panel" class="chat-panel hidden">
+    <div class="chat-header">
+      <div>
+        <h3>Supervisor Agent</h3>
+        <p>Guided operations chat</p>
+      </div>
+      <button id="chat-close" class="chat-close">×</button>
+    </div>
+    <div id="chat-messages" class="chat-messages"></div>
+    <div class="chat-suggestions">
+      <p>Suggested questions</p>
+      <div id="chat-chip-list" class="chat-chip-list"></div>
+    </div>
+    <form id="chat-form" class="chat-form">
+      <select id="chat-language">
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+      </select>
+      <input id="chat-input" type="text" placeholder="Ask about workers, alerts, or zones" required>
+      <button type="submit">Send</button>
+    </form>
+  </section>
+
+  <template id="visit-row-template">
+    <tr class="visit-detail-row">
+      <td colspan="5">
+        <div class="visit-detail-content"></div>
+      </td>
+    </tr>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
