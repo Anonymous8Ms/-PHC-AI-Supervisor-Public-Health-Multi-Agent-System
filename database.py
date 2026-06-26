@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from sqlalchemy import create_engine
@@ -5,7 +6,9 @@ from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATABASE_URL = f"sqlite:///{BASE_DIR / 'health_agent.db'}"
+DATABASE_DIR = Path(os.getenv("RAILWAY_VOLUME_MOUNT_PATH", os.getenv("DB_DIR", str(BASE_DIR))))
+DATABASE_FILE = Path(os.getenv("DB_PATH", str(DATABASE_DIR / "health_agent.db")))
+DATABASE_URL = f"sqlite:///{DATABASE_FILE}"
 
 engine = create_engine(
     DATABASE_URL,

@@ -362,4 +362,4 @@ bootstrap()
 
 
 if __name__ == "__main__":
-    app.run(port=FLASK_PORT, debug=FLASK_DEBUG)
+    app.run(host="0.0.0.0", port=FLASK_PORT, debug=FLASK_DEBUG)

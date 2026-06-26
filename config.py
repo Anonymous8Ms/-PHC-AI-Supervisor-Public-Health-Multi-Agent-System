@@ -8,8 +8,8 @@ import google.generativeai as genai
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-FLASK_PORT = int(os.getenv("FLASK_PORT", "5000"))
-FLASK_DEBUG = os.getenv("FLASK_DEBUG", "True").lower() == "true"
+FLASK_PORT = int(os.getenv("PORT", os.getenv("FLASK_PORT", "5000")))
+FLASK_DEBUG = os.getenv("FLASK_DEBUG", "False").lower() == "true"
 GEMINI_MODEL = "gemini-1.5-flash"
 
 if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
