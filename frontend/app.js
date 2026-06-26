@@ -1,7 +1,9 @@
 const API_BASE = (() => {
-  if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+  // Production: Railway (Flask serves frontend + API from same domain)
+  if (window.location.host.includes("railway.app")) {
     return `${window.location.origin}/api`;
   }
+  // Local development
   return "http://127.0.0.1:5000/api";
 })();
 

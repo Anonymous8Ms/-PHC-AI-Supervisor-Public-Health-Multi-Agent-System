@@ -66,7 +66,13 @@
 
 ## 🚀 Quick Start
 
-### 1. Clone & Install
+### 🌐 Live Demo
+
+**Deployed on Railway:** [https://web-production-a5ed4.up.railway.app](https://web-production-a5ed4.up.railway.app)
+
+The live demo includes pre-loaded fake visits, alerts, and a working AI chat panel. Try asking *"Lata Bai ki report kaisi hai?"* in the chat.
+
+### 1. Clone & Install (Local)
 
 ```bash
 git clone <your-repo-url>
@@ -76,7 +82,7 @@ pip install -r requirements.txt
 
 ### 2. Add Your Gemini API Key
 
-Create a `.env` file (or edit the existing one):
+Create a `.env` file:
 
 ```env
 GEMINI_API_KEY=your_actual_gemini_api_key_here
@@ -86,7 +92,7 @@ FLASK_DEBUG=True
 
 > Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 
-### 3. Run the Backend
+### 3. Run Locally
 
 ```bash
 python app.py
