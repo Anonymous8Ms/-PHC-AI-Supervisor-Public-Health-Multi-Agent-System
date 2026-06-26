@@ -1,24 +1,5 @@
 # 🏥 PHC AI Supervisor — Public Health Multi-Agent System
 
-> **AI HOUSE — Build with AI (Google Hackathon)**  
-> **Track:** Public Health — Rural Health Worker Attendance  
-> **Goal:** Detect fake health worker visits, predict underserved zones, and empower PHC supervisors with an AI-powered command center.
-
----
-
-## 🎥 60-Second Demo Story
-
-**Lata Bai** is an ASHA worker in PHC Kurud, Chhattisgarh. She claims 20 visits today. Our system receives it.
-
-But our **Verification Agent** caught three red flags:
-- ❌ GPS is **24 km** from the household
-- ❌ She **reused a photo** from another visit
-- ❌ Filed at **10 PM on a Sunday**
-
-The **Prediction Agent** also flagged that her zone hasn't had real coverage in 30 days — **outbreak risk**.
-
-The **Supervisor Agent** lets the PHC in-charge ask in Hindi: *"Lata Bai ki report kaisi hai?"* — and gets a full summary in seconds.
-
 **That is the power of PHC AI Supervisor.**
 
 ---
@@ -255,16 +236,6 @@ The system **never breaks** — it gracefully degrades.
 
 ---
 
-## 🏆 Hackathon Criteria Alignment
-
-| Criteria | How We Address It |
-|----------|-----------------|
-| **50% — AI Agent Analysis** | 4 distinct agents with defined roles, Gemini integration, fallback logic, and real-world data |
-| **25% — Community Votes** | Beautiful UI, compelling demo story, relatable problem, Hindi language support |
-| **25% — Structured Feedback** | Clean code, proper architecture, error handling, documentation, demo-ready out of the box |
-
----
-
 ## 📂 Project Structure
 
 ```
@@ -289,12 +260,5 @@ health-agent/
 
 ---
 
-## 📝 License
-
-MIT — Built for the AI HOUSE Google Hackathon. Feel free to fork and extend.
-
----
-
-> **Built by a solo AI architect.** No manual code written. Designed with precision, generated with AI, reviewed for quality.
 
 *"From paper logs to AI-powered public health — one agent at a time."*
