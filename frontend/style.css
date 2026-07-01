@@ -798,18 +798,32 @@ body {
 }
 
 .chat-form {
-  display: grid;
-  grid-template-columns: 108px 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
   gap: 10px;
   padding: 14px 16px 16px;
   border-top: 1px solid rgba(18, 48, 74, 0.06);
   background: rgba(255, 255, 255, 0.94);
+  min-width: 0;
+}
+
+.chat-form select {
+  flex: 0 0 132px;
+  min-width: 0;
+}
+
+.chat-form input {
+  flex: 1 1 160px;
+  min-width: 0;
 }
 
 .chat-form button {
+  flex: 0 0 auto;
   padding: 0 18px;
   background: var(--ink);
   color: #fff;
+  white-space: nowrap;
 }
 
 @keyframes fadeIn {
@@ -873,14 +887,7 @@ body {
   }
 
   .chat-form {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .chat-form select,
-  .chat-form input,
-  .chat-form button {
-    width: 100%;
+    flex-direction: column;
   }
 
   .alert-badge,
@@ -890,5 +897,14 @@ body {
 
   .page-shell {
     padding: 18px 16px 140px;
+  }
+}
+
+@media (max-width: 640px) {
+  .chat-form select,
+  .chat-form input,
+  .chat-form button {
+    width: 100%;
+    flex: 1 1 100%;
   }
 }
