@@ -24,6 +24,7 @@ const state = {
   workers: [],
   expandedWorkerId: null,
   userMessageCount: 0,
+  suggestionsOpen: false,
 };
 
 const RAISE_QUERY_PROMPT = "Raise Query: I need a specific worker, alert, or zone review.";
@@ -283,7 +284,8 @@ function renderSuggestionChips() {
     chip.textContent = query;
     chip.addEventListener("click", () => {
       document.getElementById("chat-input").value = query;
-      document.getElementById("chat-form").requestSubmit();
+      setSuggestionVisibility(false);
+      document.getElementById("chat-input").focus();
     });
     chipList.appendChild(chip);
   });
@@ -294,14 +296,24 @@ function renderSuggestionChips() {
   raiseChip.textContent = "Raise Query";
   raiseChip.addEventListener("click", () => {
     document.getElementById("chat-input").value = RAISE_QUERY_PROMPT;
+    setSuggestionVisibility(false);
     document.getElementById("chat-input").focus();
   });
   chipList.appendChild(raiseChip);
 }
 
+function setSuggestionVisibility(visible) {
+  state.suggestionsOpen = visible;
+  document.getElementById("chat-chip-wrap").classList.toggle("hidden", !visible);
+  document.getElementById("chat-suggestion-toggle").textContent = visible
+    ? "Hide Suggested Questions"
+    : "Suggested Questions";
+}
+
 function maybePromptStructuredQuery() {
   if (state.userMessageCount === 5) {
     addMessage("system", "Need a structured query? Use the built-in prompts below, or tap Raise Query for a specific worker, alert, or zone request.");
+    setSuggestionVisibility(true);
   }
 }
 
@@ -328,15 +340,22 @@ async function submitChatQuery(query, language) {
 
 function initChat() {
   const panel = document.getElementById("chat-panel");
+  const closeChat = () => {
+    panel.classList.add("hidden");
+  };
+
   document.getElementById("chat-toggle").addEventListener("click", () => {
     panel.classList.toggle("hidden");
   });
-  document.getElementById("chat-close").addEventListener("click", () => {
-    panel.classList.add("hidden");
-  });
+  document.getElementById("chat-close").addEventListener("click", closeChat);
+  document.getElementById("chat-back-home").addEventListener("click", closeChat);
 
   renderSuggestionChips();
+  setSuggestionVisibility(false);
   addMessage("system", "Ask directly, or use the suggested questions for worker, alert, and zone insights.");
+  document.getElementById("chat-suggestion-toggle").addEventListener("click", () => {
+    setSuggestionVisibility(!state.suggestionsOpen);
+  });
 
   document.getElementById("chat-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -357,6 +376,23 @@ function initZoneFilters() {
   document.getElementById("zone-search").addEventListener("input", applyZoneFilters);
 }
 
+function initScrollReveal() {
+  const items = document.querySelectorAll(".scroll-reveal");
+  if (!items.length) {
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+      }
+    });
+  }, { threshold: 0.12 });
+
+  items.forEach((item) => observer.observe(item));
+}
+
 async function refreshAll() {
   await Promise.all([loadDashboard(), loadAlerts(), loadWorkers(), loadZones()]);
 }
@@ -365,6 +401,7 @@ function init() {
   document.getElementById("refresh-button").addEventListener("click", refreshAll);
   initChat();
   initZoneFilters();
+  initScrollReveal();
   refreshAll().catch(() => {});
   setInterval(() => {
     refreshAll().catch(() => {});

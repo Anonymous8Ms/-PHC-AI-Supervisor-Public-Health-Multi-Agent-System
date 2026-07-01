@@ -15,7 +15,7 @@
     <div class="topbar-copy">
       <p class="eyebrow">Public Health Multi-Agent System</p>
       <h1>PHC AI Supervisor</h1>
-      <p>Rural Health Intelligence for field attendance, fraud review, and underserved zone monitoring.</p>
+      <p>Attendance, fraud review, and zone risk monitoring.</p>
     </div>
     <div class="topbar-actions">
       <div class="topbar-chip">
@@ -27,7 +27,7 @@
   </header>
 
   <main class="page-shell">
-    <section class="kpi-grid">
+    <section class="kpi-grid scroll-reveal">
       <article class="kpi-card kpi-green">
         <span>Total Workers</span>
         <strong id="kpi-workers">0</strong>
@@ -46,7 +46,7 @@
       </article>
     </section>
 
-    <section class="content-grid">
+    <section class="content-grid scroll-reveal">
       <div class="panel alert-panel">
         <div class="panel-header">
           <div>
@@ -88,7 +88,7 @@
       </div>
     </section>
 
-    <section class="panel worker-panel">
+    <section class="panel worker-panel scroll-reveal">
       <div class="panel-header">
         <div>
           <p class="section-label">Field Team</p>
@@ -120,12 +120,18 @@
         <h3>Supervisor Agent</h3>
         <p>Guided operations chat</p>
       </div>
-      <button id="chat-close" class="chat-close">×</button>
+      <div class="chat-header-actions">
+        <button id="chat-back-home" class="chat-back-home" type="button">Back to Dashboard</button>
+        <button id="chat-close" class="chat-close" type="button">×</button>
+      </div>
     </div>
     <div id="chat-messages" class="chat-messages"></div>
     <div class="chat-suggestions">
-      <p>Suggested questions</p>
-      <div id="chat-chip-list" class="chat-chip-list"></div>
+      <button id="chat-suggestion-toggle" class="chat-suggestion-toggle" type="button">Suggested Questions</button>
+      <div id="chat-chip-wrap" class="chat-chip-wrap hidden">
+        <p>Suggested questions</p>
+        <div id="chat-chip-list" class="chat-chip-list"></div>
+      </div>
     </div>
     <form id="chat-form" class="chat-form">
       <select id="chat-language">
