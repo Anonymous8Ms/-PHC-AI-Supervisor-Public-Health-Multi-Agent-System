@@ -70,11 +70,35 @@
       <div id="alert-feed" class="alert-feed"></div>
     </section>
 
+    <section class="panel worker-panel scroll-reveal">
+      <div class="panel-header">
+        <div>
+          <p class="section-label">Field Team</p>
+          <h2>Worker List</h2>
+        </div>
+        <span>Click a row to expand recent visits</span>
+      </div>
+      <div class="worker-table-wrap">
+        <table class="worker-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Zone</th>
+              <th>Visits Today</th>
+              <th>Status</th>
+              <th>Last Visit</th>
+            </tr>
+          </thead>
+          <tbody id="worker-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="zone-section scroll-reveal">
       <div class="zone-section-copy">
         <p class="section-label">Explore</p>
         <h2>Zone Coverage</h2>
-        <p>Scroll into the coverage layer to filter risk and inspect underserved areas with less noise up front.</p>
+        <p>Filter risk and inspect underserved areas only after the top alerts and worker activity.</p>
       </div>
       <div class="panel map-panel">
         <div class="panel-header">
@@ -103,30 +127,6 @@
           </div>
         </div>
         <div id="zone-map" class="zone-map"></div>
-      </div>
-    </section>
-
-    <section class="panel worker-panel scroll-reveal">
-      <div class="panel-header">
-        <div>
-          <p class="section-label">Field Team</p>
-          <h2>Worker List</h2>
-        </div>
-        <span>Click a row to expand recent visits</span>
-      </div>
-      <div class="worker-table-wrap">
-        <table class="worker-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Zone</th>
-              <th>Visits Today</th>
-              <th>Status</th>
-              <th>Last Visit</th>
-            </tr>
-          </thead>
-          <tbody id="worker-table-body"></tbody>
-        </table>
       </div>
     </section>
   </main>
