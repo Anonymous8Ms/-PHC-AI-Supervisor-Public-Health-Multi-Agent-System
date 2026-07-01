@@ -8,6 +8,35 @@ from models import Alert, ChatLog, HealthWorker, Household, Visit
 
 
 class SupervisorAgent:
+    GREETING_TERMS = ["hi", "hello", "hey", "namaste", "good morning", "good evening"]
+    ROLE_TERMS = ["what is your work", "what do you do", "who are you", "your work", "kaam", "kya karte", "tum kya", "aap kya"]
+    SUPPORTED_TERMS = [
+        "worker",
+        "visit",
+        "alert",
+        "fake",
+        "fraud",
+        "zone",
+        "risk",
+        "critical",
+        "report",
+        "attendance",
+        "query",
+        "area",
+        "issue",
+        "problem",
+        "underserved",
+        "kaisi hai",
+        "report kaisi",
+        "coverage",
+        "follow-up",
+        "follow up",
+        "flagged",
+        "supervisor",
+        "dashboard",
+        "phc",
+    ]
+
     def __init__(self, session=None):
         self.session = session or SessionLocal()
         self._owns_session = session is None
@@ -71,36 +100,12 @@ class SupervisorAgent:
         query_lower = query.lower().strip()
         if not query_lower:
             return False
-
-        supported_terms = [
-            "hi",
-            "hello",
-            "hey",
-            "namaste",
-            "what is your work",
-            "what do you do",
-            "who are you",
-            "worker",
-            "visit",
-            "alert",
-            "fake",
-            "fraud",
-            "zone",
-            "risk",
-            "critical",
-            "report",
-            "attendance",
-            "query",
-            "area",
-            "issue",
-            "problem",
-            "underserved",
-            "kaisi hai",
-            "kaam",
-            "kya karte",
-            "report kaisi",
-        ]
-        return self._find_worker(query) is not None or any(term in query_lower for term in supported_terms)
+        return (
+            self._find_worker(query) is not None
+            or self._matches_phrase(query_lower, self.GREETING_TERMS)
+            or self._matches_phrase(query_lower, self.ROLE_TERMS)
+            or any(term in query_lower for term in self.SUPPORTED_TERMS)
+        )
 
     @staticmethod
     def _matches_phrase(query_lower, phrases):
@@ -112,15 +117,12 @@ class SupervisorAgent:
         worker = self._find_worker(query)
         is_hindi = language.lower() == "hindi"
 
-        greeting_terms = ["hi", "hello", "hey", "namaste", "good morning", "good evening"]
-        role_terms = ["what is your work", "what do you do", "who are you", "your work", "kaam", "kya karte", "tum kya", "aap kya"]
-
-        if self._matches_phrase(query_lower, greeting_terms):
+        if self._matches_phrase(query_lower, self.GREETING_TERMS):
             if is_hindi:
                 return "Namaste. Main Supervisor Agent hoon. Main worker attendance, fake visits, alerts, aur risk zones par short updates de sakta hoon."
             return "Hello. I am the Supervisor Agent. I can help with worker attendance, fake visits, alerts, and zone risk updates."
 
-        if self._matches_phrase(query_lower, role_terms):
+        if self._matches_phrase(query_lower, self.ROLE_TERMS):
             if is_hindi:
                 return "Mera kaam health workers ki visits monitor karna, fake visit flags dikhana, aur risky zones par supervisor ko short guidance dena hai."
             return "My job is to monitor health worker visits, surface fake-visit risks, and guide supervisors on alerts and underserved zones."
@@ -224,6 +226,58 @@ class SupervisorAgent:
             return f"{stats_text} Recent alerts: {recent_alerts[:180]}. Agar aap worker ya zone ka naam poochhenge to main zyada specific jawab dunga."
         return f"{stats_text} Recent alerts: {recent_alerts[:180]}. Ask about a worker or zone name for a more specific answer."
 
+    def _should_use_gemini(self, query):
+        query_lower = query.lower().strip()
+        if not self._is_supported_query(query):
+            return False
+        if self._matches_phrase(query_lower, self.GREETING_TERMS + self.ROLE_TERMS):
+            return False
+        deterministic_patterns = [
+            "which worker has flagged visits",
+            "flagged worker",
+            "urgent follow-up",
+            "needs urgent follow-up",
+            "summarize active fake visit alerts",
+            "fake visit alerts",
+            "raise query",
+        ]
+        return not any(pattern in query_lower for pattern in deterministic_patterns)
+
+    def _build_gemini_context(self, query):
+        today = datetime.utcnow().date()
+        recent_alerts = (
+            self.session.query(Alert)
+            .filter(Alert.is_resolved.is_(False))
+            .order_by(Alert.created_at.desc())
+            .limit(3)
+            .all()
+        )
+        critical_zones = [zone for (zone,) in self.session.query(Household.zone).filter(Household.risk_level == "critical").distinct().limit(4).all()]
+        worker = self._find_worker(query)
+        worker_context = ""
+        if worker:
+            worker_stats = self._worker_stats(worker)
+            last_visit = worker_stats["last_visit"].visit_date.isoformat() if worker_stats["last_visit"] else "none"
+            issue = worker_stats["recent_issue"].message if worker_stats["recent_issue"] else "none"
+            worker_context = (
+                f"Worker: {worker.name}, zone {worker.zone}, language {worker.language}, visits_today {worker_stats['visits_today']}, "
+                f"total_visits {worker_stats['total_visits']}, flagged_visits {worker_stats['flagged_visits']}, "
+                f"last_visit {last_visit}, latest_issue {issue}."
+            )
+        stats = (
+            f"today={today.isoformat()}, total_workers={self.session.query(func.count(HealthWorker.id)).scalar() or 0}, "
+            f"visits_today={self.session.query(func.count(Visit.id)).filter(func.date(Visit.visit_date) == today.isoformat()).scalar() or 0}, "
+            f"flagged_today={self.session.query(func.count(Visit.id)).filter(func.date(Visit.visit_date) == today.isoformat(), Visit.status.in_(['flagged', 'fake'])).scalar() or 0}."
+        )
+        alerts_context = "; ".join(
+            f"{alert.alert_type} in {alert.zone} ({alert.severity}): {alert.message}"
+            for alert in recent_alerts
+        ) or "none"
+        return (
+            f"Dashboard scope only. {stats} Critical zones: {', '.join(critical_zones) or 'none'}. "
+            f"Recent unresolved alerts: {alerts_context}. {worker_context}"
+        ).strip()
+
     def execute(self, query, language="english"):
         try:
             now = datetime.utcnow()
@@ -255,19 +309,16 @@ class SupervisorAgent:
                 f"Total workers: {total_workers}, Total visits today: {total_visits_today}, "
                 f"Flagged visits today: {flagged_today}."
             )
-            worker_context = self._find_worker_context(query)
-            context = f"Recent alerts: {recent_alerts}. Today's stats: {stats}. {worker_context}".strip()
-
-            system_prompt = (
-                "You are the AI Supervisor for a rural public health system. You help PHC supervisors monitor "
-                "health worker attendance, detect fraud, and identify underserved areas. "
-                f"Answer in {language}. Be concise (max 3 sentences). Use the following context: {context}. "
-                "If the user asks about a specific worker, search for the worker by name and include their stats. "
-                "If the question is outside worker monitoring, alerts, visits, fraud, or zone risk, tell the user "
-                "to use the built-in prompts or Raise Query."
-            )
             response = None
-            if self._is_supported_query(query):
+            if self._should_use_gemini(query):
+                context = self._build_gemini_context(query)
+                system_prompt = (
+                    "You are a website-scoped AI supervisor for a rural public health dashboard. "
+                    f"Answer only in {language}. Stay within worker attendance, visit verification, alerts, supervisors, and zone coverage. "
+                    "Do not answer unrelated general knowledge questions. If off-topic, tell the user to use built-in prompts or Raise Query. "
+                    "Be natural but concise, maximum 2 short sentences. Do not restate the whole dashboard unless necessary. "
+                    f"Context: {context}"
+                )
                 response = get_gemini_response(system_prompt, query)
             if not response or "temporarily unavailable" in str(response).lower():
                 response = self._build_fallback_response(query, language, stats, recent_alerts)

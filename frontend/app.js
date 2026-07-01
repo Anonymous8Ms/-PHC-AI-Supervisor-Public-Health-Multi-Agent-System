@@ -352,7 +352,7 @@ function initChat() {
 
   renderSuggestionChips();
   setSuggestionVisibility(false);
-  addMessage("system", "Ask directly, or use the suggested questions for worker, alert, and zone insights.");
+  addMessage("system", "Ask only about workers, alerts, visits, fraud checks, or zone coverage. For faster answers and lower token use, use the suggested questions.");
   document.getElementById("chat-suggestion-toggle").addEventListener("click", () => {
     setSuggestionVisibility(!state.suggestionsOpen);
   });

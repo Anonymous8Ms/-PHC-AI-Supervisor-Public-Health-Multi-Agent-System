@@ -872,6 +872,17 @@ body {
     flex: 1 1 auto;
   }
 
+  .chat-form {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .chat-form select,
+  .chat-form input,
+  .chat-form button {
+    width: 100%;
+  }
+
   .alert-badge,
   .zone-status {
     white-space: normal;
