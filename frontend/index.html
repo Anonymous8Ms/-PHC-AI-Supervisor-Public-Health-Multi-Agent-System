@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PHC AI Supervisor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -27,6 +30,16 @@
   </header>
 
   <main class="page-shell">
+    <section class="hero-summary scroll-reveal">
+      <div class="hero-summary-copy">
+        <p class="section-label">Overview</p>
+        <h2>Live rural health operations in one clean supervisor view.</h2>
+      </div>
+      <div class="hero-summary-note">
+        <span>Scroll down for alerts, zone exploration, and worker-level detail.</span>
+      </div>
+    </section>
+
     <section class="kpi-grid scroll-reveal">
       <article class="kpi-card kpi-green">
         <span>Total Workers</span>
@@ -46,23 +59,28 @@
       </article>
     </section>
 
-    <section class="content-grid scroll-reveal">
-      <div class="panel alert-panel">
-        <div class="panel-header">
-          <div>
-            <p class="section-label">Monitor</p>
-            <h2>Alert Feed</h2>
-          </div>
-          <span id="critical-zones">0 critical zones</span>
+    <section class="panel alert-panel scroll-reveal">
+      <div class="panel-header">
+        <div>
+          <p class="section-label">Monitor</p>
+          <h2>Alert Feed</h2>
         </div>
-        <div id="alert-feed" class="alert-feed"></div>
+        <span id="critical-zones">0 critical zones</span>
       </div>
+      <div id="alert-feed" class="alert-feed"></div>
+    </section>
 
+    <section class="zone-section scroll-reveal">
+      <div class="zone-section-copy">
+        <p class="section-label">Explore</p>
+        <h2>Zone Coverage</h2>
+        <p>Scroll into the coverage layer to filter risk and inspect underserved areas with less noise up front.</p>
+      </div>
       <div class="panel map-panel">
         <div class="panel-header">
           <div>
-            <p class="section-label">Explore</p>
-            <h2>Zone Coverage</h2>
+            <p class="section-label">Explore Zone Coverage</p>
+            <h2>Field coverage by zone</h2>
           </div>
           <span>7-day field view</span>
         </div>
