@@ -1,6 +1,8 @@
-from datetime import datetime, timedelta
+"""Flask entry point for the PHC AI Supervisor dashboard and API."""
 
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -20,11 +22,11 @@ app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
-def isoformat_or_none(value):
+def isoformat_or_none(value: Optional[datetime]) -> Optional[str]:
     return value.isoformat() if value else None
 
 
-def serialize_visit(visit):
+def serialize_visit(visit: Visit) -> Dict[str, Any]:
     return {
         "id": visit.id,
         "worker_id": visit.worker_id,
@@ -40,7 +42,7 @@ def serialize_visit(visit):
     }
 
 
-def serialize_alert(alert):
+def serialize_alert(alert: Alert) -> Dict[str, Any]:
     return {
         "id": alert.id,
         "visit_id": alert.visit_id,
@@ -53,7 +55,7 @@ def serialize_alert(alert):
     }
 
 
-def ensure_demo_data():
+def ensure_demo_data() -> None:
     session = SessionLocal()
     try:
         has_workers = session.query(func.count(HealthWorker.id)).scalar() or 0
@@ -82,6 +84,11 @@ def frontend_assets(filename):
     if filename.startswith("api/"):
         return jsonify({"error": "Not found"}), 404
     return send_from_directory(FRONTEND_DIR, filename)
+
+
+@app.get("/api/health")
+def health_check():
+    return jsonify({"status": "ok", "service": "phc-ai-supervisor"})
 
 
 @app.get("/api/dashboard")

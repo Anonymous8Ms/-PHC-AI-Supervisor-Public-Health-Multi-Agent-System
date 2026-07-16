@@ -1,4 +1,7 @@
+"""Agent responsible for underserved-zone prediction and alerting."""
+
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func
 
@@ -8,16 +11,18 @@ from models import Alert, Household, Visit
 
 
 class PredictionAgent:
-    def __init__(self, session=None):
+    """Analyze recent coverage patterns and mark risky zones."""
+
+    def __init__(self, session: Optional[Any] = None) -> None:
         self.session = session or SessionLocal()
         self._owns_session = session is None
 
-    def _close(self):
+    def _close(self) -> None:
         if self._owns_session:
             self.session.close()
 
-    def _fallback_prediction(self, zone_metrics):
-        predictions = []
+    def _fallback_prediction(self, zone_metrics: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        predictions: List[Dict[str, Any]] = []
         for item in zone_metrics:
             unvisited = item["unvisited_households"]
             visits_7d = item["visits_7d"]
@@ -45,7 +50,7 @@ class PredictionAgent:
                 )
         return predictions
 
-    def execute(self):
+    def execute(self) -> List[Dict[str, Any]]:
         try:
             now = datetime.utcnow()
             cutoff_7 = now - timedelta(days=7)

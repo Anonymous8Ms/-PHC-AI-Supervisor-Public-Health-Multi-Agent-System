@@ -1,6 +1,9 @@
+"""Demo dataset generator for local runs and hackathon judging."""
+
 import hashlib
 import random
 from datetime import datetime, timedelta, time
+from typing import Tuple
 
 from database import Base, SessionLocal, engine, init_db
 from models import Alert, HealthWorker, Household, PHC, Visit
@@ -54,24 +57,24 @@ SYMPTOMS = [
 ]
 
 
-def random_offset():
+def random_offset() -> Tuple[float, float]:
     lat_delta = random.uniform(-0.035, 0.035)
     lng_delta = random.uniform(-0.035, 0.035)
     return lat_delta, lng_delta
 
 
-def build_photo_hash(seed_text):
+def build_photo_hash(seed_text: str) -> str:
     return hashlib.sha256(seed_text.encode("utf-8")).hexdigest()[:64]
 
 
-def reset_database():
+def reset_database() -> None:
     SessionLocal.remove()
     engine.dispose()
     Base.metadata.drop_all(bind=engine)
     init_db()
 
 
-def generate_demo_data():
+def generate_demo_data() -> None:
     reset_database()
     session = SessionLocal()
     now = datetime.utcnow()

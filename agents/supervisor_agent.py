@@ -1,4 +1,7 @@
+"""Supervisor chat agent with scoped Gemini usage and deterministic fallbacks."""
+
 from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func
 
@@ -8,6 +11,8 @@ from models import Alert, ChatLog, HealthWorker, Household, Visit
 
 
 class SupervisorAgent:
+    """Answer dashboard-related supervisor questions in English or Hindi."""
+
     GREETING_TERMS = ["hi", "hello", "hey", "namaste", "good morning", "good evening"]
     ROLE_TERMS = ["what is your work", "what do you do", "who are you", "your work", "kaam", "kya karte", "tum kya", "aap kya"]
     SUPPORTED_TERMS = [
@@ -37,15 +42,15 @@ class SupervisorAgent:
         "phc",
     ]
 
-    def __init__(self, session=None):
+    def __init__(self, session: Optional[Any] = None) -> None:
         self.session = session or SessionLocal()
         self._owns_session = session is None
 
-    def _close(self):
+    def _close(self) -> None:
         if self._owns_session:
             self.session.close()
 
-    def _find_worker(self, query):
+    def _find_worker(self, query: str) -> Optional[HealthWorker]:
         lowered = query.lower()
         workers = self.session.query(HealthWorker).all()
         for worker in workers:
@@ -53,7 +58,7 @@ class SupervisorAgent:
                 return worker
         return None
 
-    def _worker_stats(self, worker):
+    def _worker_stats(self, worker: HealthWorker) -> Dict[str, Any]:
         today = datetime.utcnow().date()
         total_visits = self.session.query(func.count(Visit.id)).filter(Visit.worker_id == worker.id).scalar() or 0
         visits_today = self.session.query(func.count(Visit.id)).filter(
@@ -85,7 +90,7 @@ class SupervisorAgent:
             "recent_issue": recent_issue,
         }
 
-    def _find_worker_context(self, query):
+    def _find_worker_context(self, query: str) -> str:
         worker = self._find_worker(query)
         if not worker:
             return ""
@@ -96,7 +101,7 @@ class SupervisorAgent:
             f"Flagged visits: {stats['flagged_visits']}."
         )
 
-    def _is_supported_query(self, query):
+    def _is_supported_query(self, query: str) -> bool:
         query_lower = query.lower().strip()
         if not query_lower:
             return False
@@ -108,11 +113,17 @@ class SupervisorAgent:
         )
 
     @staticmethod
-    def _matches_phrase(query_lower, phrases):
+    def _matches_phrase(query_lower: str, phrases: List[str]) -> bool:
         normalized = f" {query_lower.strip()} "
         return any(f" {phrase} " in normalized or query_lower.strip() == phrase for phrase in phrases)
 
-    def _build_fallback_response(self, query, language, stats_text, recent_alerts):
+    def _build_fallback_response(
+        self,
+        query: str,
+        language: str,
+        stats_text: str,
+        recent_alerts: str,
+    ) -> str:
         query_lower = query.lower()
         worker = self._find_worker(query)
         is_hindi = language.lower() == "hindi"
@@ -226,7 +237,7 @@ class SupervisorAgent:
             return f"{stats_text} Recent alerts: {recent_alerts[:180]}. Agar aap worker ya zone ka naam poochhenge to main zyada specific jawab dunga."
         return f"{stats_text} Recent alerts: {recent_alerts[:180]}. Ask about a worker or zone name for a more specific answer."
 
-    def _should_use_gemini(self, query):
+    def _should_use_gemini(self, query: str) -> bool:
         query_lower = query.lower().strip()
         if not self._is_supported_query(query):
             return False
@@ -243,7 +254,7 @@ class SupervisorAgent:
         ]
         return not any(pattern in query_lower for pattern in deterministic_patterns)
 
-    def _build_gemini_context(self, query):
+    def _build_gemini_context(self, query: str) -> str:
         today = datetime.utcnow().date()
         recent_alerts = (
             self.session.query(Alert)

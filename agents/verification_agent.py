@@ -1,5 +1,8 @@
+"""Agent responsible for fake-visit checks and alert generation."""
+
 import math
-from datetime import datetime, timedelta
+from datetime import timedelta
+from typing import Any, Dict, Optional
 
 from config import get_gemini_response
 from database import SessionLocal
@@ -7,16 +10,18 @@ from models import Alert, Visit
 
 
 class VerificationAgent:
-    def __init__(self, session=None):
+    """Validate a submitted visit against location, timing, and photo rules."""
+
+    def __init__(self, session: Optional[Any] = None) -> None:
         self.session = session or SessionLocal()
         self._owns_session = session is None
 
-    def _close(self):
+    def _close(self) -> None:
         if self._owns_session:
             self.session.close()
 
     @staticmethod
-    def haversine_distance(lat1, lng1, lat2, lng2):
+    def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
         earth_radius = 6371000
         phi1 = math.radians(lat1)
         phi2 = math.radians(lat2)
@@ -30,7 +35,7 @@ class VerificationAgent:
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return earth_radius * c
 
-    def execute(self, visit_id):
+    def execute(self, visit_id: int) -> Dict[str, Any]:
         try:
             visit = self.session.get(Visit, visit_id)
             if not visit or not visit.worker or not visit.household:

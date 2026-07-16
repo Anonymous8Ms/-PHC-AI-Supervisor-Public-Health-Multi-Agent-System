@@ -1,4 +1,7 @@
+"""Agent responsible for validating and storing visit submissions."""
+
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 from config import get_gemini_response
 from database import SessionLocal
@@ -6,15 +9,17 @@ from models import HealthWorker, Household, Visit
 
 
 class IngestionAgent:
-    def __init__(self, session=None):
+    """Store a visit report and request an AI summary when symptoms exist."""
+
+    def __init__(self, session: Optional[Any] = None) -> None:
         self.session = session or SessionLocal()
         self._owns_session = session is None
 
-    def _close(self):
+    def _close(self) -> None:
         if self._owns_session:
             self.session.close()
 
-    def execute(self, payload):
+    def execute(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         try:
             worker = self.session.get(HealthWorker, payload.get("worker_id"))
             household = self.session.get(Household, payload.get("household_id"))
