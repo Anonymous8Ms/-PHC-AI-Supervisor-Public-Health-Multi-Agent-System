@@ -289,7 +289,7 @@ class SupervisorAgent:
             f"Recent unresolved alerts: {alerts_context}. {worker_context}"
         ).strip()
 
-    def execute(self, query, language="english"):
+    def execute(self, query: str, language: str = "english") -> Dict[str, Any]:
         try:
             now = datetime.utcnow()
             seven_days_ago = now - timedelta(days=7)
@@ -345,6 +345,13 @@ class SupervisorAgent:
             return {"response": response, "agent": "supervisor"}
         except Exception as exc:
             self.session.rollback()
-            return {"response": f"Unable to process request: {exc}", "agent": "supervisor"}
+            return {
+                "response": "Unable to process your request right now.",
+                "agent": "supervisor",
+                "error": "Unable to process supervisor query",
+                "status_code": 500,
+                "code": "supervisor_failed",
+                "details": {"exception": str(exc)},
+            }
         finally:
             self._close()

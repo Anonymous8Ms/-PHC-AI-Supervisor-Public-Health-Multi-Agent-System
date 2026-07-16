@@ -21,6 +21,22 @@ class VerificationAgent:
             self.session.close()
 
     @staticmethod
+    def _error(
+        message: str,
+        status_code: int,
+        code: str,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "error": message,
+            "status_code": status_code,
+            "code": code,
+        }
+        if details:
+            payload["details"] = details
+        return payload
+
+    @staticmethod
     def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
         earth_radius = 6371000
         phi1 = math.radians(lat1)
@@ -39,7 +55,7 @@ class VerificationAgent:
         try:
             visit = self.session.get(Visit, visit_id)
             if not visit or not visit.worker or not visit.household:
-                return {"error": "Visit not found"}
+                return self._error("Visit not found", 404, "visit_not_found")
 
             household = visit.household
             distance_m = self.haversine_distance(
@@ -123,6 +139,11 @@ class VerificationAgent:
             }
         except Exception as exc:
             self.session.rollback()
-            return {"error": str(exc)}
+            return self._error(
+                "Unable to verify visit",
+                500,
+                "verification_failed",
+                {"exception": str(exc)},
+            )
         finally:
             self._close()

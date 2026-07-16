@@ -29,3 +29,39 @@ def test_supervisor_agent_redirects_off_topic_queries(db_session):
     )
     assert result["agent"] == "supervisor"
     assert "outside my trained dashboard scope" in result["response"].lower()
+
+
+def test_supervisor_agent_handles_greeting_without_gemini(db_session):
+    from agents.supervisor_agent import SupervisorAgent
+
+    result = SupervisorAgent(session=db_session).execute(
+        query="hi",
+        language="english",
+    )
+    assert result["agent"] == "supervisor"
+    assert "supervisor agent" in result["response"].lower()
+
+
+def test_ingestion_agent_rejects_invalid_coordinates(db_session):
+    from agents.ingestion_agent import IngestionAgent
+    from models import Household
+
+    household = db_session.query(Household).first()
+    worker = household.phc.health_workers[0]
+
+    result = IngestionAgent(session=db_session).execute(
+        {
+            "worker_id": worker.id,
+            "household_id": household.id,
+            "gps_lat": "bad-latitude",
+            "gps_lng": household.lng,
+        }
+    )
+    assert result["code"] == "invalid_coordinates"
+
+
+def test_verification_agent_returns_not_found_for_unknown_visit(db_session):
+    from agents.verification_agent import VerificationAgent
+
+    result = VerificationAgent(session=db_session).execute(999999)
+    assert result["code"] == "visit_not_found"

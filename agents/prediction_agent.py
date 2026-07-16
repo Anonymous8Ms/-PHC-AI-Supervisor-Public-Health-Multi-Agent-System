@@ -21,6 +21,22 @@ class PredictionAgent:
         if self._owns_session:
             self.session.close()
 
+    @staticmethod
+    def _error(
+        message: str,
+        status_code: int,
+        code: str,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "error": message,
+            "status_code": status_code,
+            "code": code,
+        }
+        if details:
+            payload["details"] = details
+        return payload
+
     def _fallback_prediction(self, zone_metrics: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         predictions: List[Dict[str, Any]] = []
         for item in zone_metrics:
@@ -50,7 +66,7 @@ class PredictionAgent:
                 )
         return predictions
 
-    def execute(self) -> List[Dict[str, Any]]:
+    def execute(self) -> Any:
         try:
             now = datetime.utcnow()
             cutoff_7 = now - timedelta(days=7)
@@ -155,6 +171,11 @@ class PredictionAgent:
             return predictions
         except Exception as exc:
             self.session.rollback()
-            return [{"zone": "unknown", "risk_level": "high", "reason": str(exc), "recommended_action": "Inspect prediction inputs."}]
+            return self._error(
+                "Unable to generate predictions",
+                500,
+                "prediction_failed",
+                {"exception": str(exc)},
+            )
         finally:
             self._close()

@@ -6,11 +6,11 @@ from typing import Any, Dict, Optional
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-from sqlalchemy import case, func
+from sqlalchemy import case, func, text
 
 from agents import IngestionAgent, PredictionAgent, SupervisorAgent, VerificationAgent
 from config import FLASK_DEBUG, FLASK_PORT
-from database import SessionLocal, init_db
+from database import NORMALIZED_DATABASE_URL, SessionLocal, init_db
 from demo_data import generate_demo_data
 from models import Alert, HealthWorker, Household, PHC, Visit
 
@@ -24,6 +24,21 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 def isoformat_or_none(value: Optional[datetime]) -> Optional[str]:
     return value.isoformat() if value else None
+
+
+def api_error(
+    message: str,
+    status_code: int,
+    code: str,
+    details: Optional[Dict[str, Any]] = None,
+):
+    payload: Dict[str, Any] = {
+        "error": message,
+        "code": code,
+    }
+    if details:
+        payload["details"] = details
+    return jsonify(payload), status_code
 
 
 def serialize_visit(visit: Visit) -> Dict[str, Any]:
@@ -71,7 +86,32 @@ def ensure_demo_data() -> None:
 def require_json_for_posts():
     if request.method == "POST" and request.path.startswith("/api/"):
         if not request.is_json:
-            return jsonify({"error": "Request body must be JSON"}), 400
+            return api_error(
+                "Request body must be JSON",
+                400,
+                "invalid_json",
+            )
+
+
+@app.errorhandler(404)
+def handle_not_found(_error):
+    if request.path.startswith("/api/"):
+        return api_error("Resource not found", 404, "not_found")
+    return _error
+
+
+@app.errorhandler(405)
+def handle_method_not_allowed(_error):
+    if request.path.startswith("/api/"):
+        return api_error("Method not allowed", 405, "method_not_allowed")
+    return _error
+
+
+@app.errorhandler(500)
+def handle_server_error(_error):
+    if request.path.startswith("/api/"):
+        return api_error("Internal server error", 500, "internal_server_error")
+    return _error
 
 
 @app.get("/")
@@ -88,7 +128,20 @@ def frontend_assets(filename):
 
 @app.get("/api/health")
 def health_check():
-    return jsonify({"status": "ok", "service": "phc-ai-supervisor"})
+    session = SessionLocal()
+    try:
+        session.execute(text("SELECT 1"))
+        database_backend = "postgresql" if NORMALIZED_DATABASE_URL.startswith("postgresql") else "sqlite"
+        return jsonify(
+            {
+                "status": "ok",
+                "service": "phc-ai-supervisor",
+                "database": database_backend,
+            }
+        )
+    finally:
+        session.close()
+        SessionLocal.remove()
 
 
 @app.get("/api/dashboard")
@@ -171,6 +224,13 @@ def list_alerts():
         resolved = request.args.get("resolved")
         query = session.query(Alert)
         if resolved is not None:
+            if resolved.lower() not in {"true", "false"}:
+                return api_error(
+                    "resolved must be either true or false",
+                    400,
+                    "invalid_query_parameter",
+                    {"parameter": "resolved"},
+                )
             query = query.filter(Alert.is_resolved.is_(resolved.lower() == "true"))
         alerts = query.order_by(
             case(
@@ -193,7 +253,7 @@ def resolve_alert(alert_id):
     try:
         alert = session.get(Alert, alert_id)
         if not alert:
-            return jsonify({"error": "Alert not found"}), 404
+            return api_error("Alert not found", 404, "alert_not_found")
         alert.is_resolved = True
         session.commit()
         return jsonify({"status": "resolved", "alert": serialize_alert(alert)})
@@ -206,20 +266,39 @@ def resolve_alert(alert_id):
 def submit_visit():
     payload = request.get_json(silent=True) or {}
     result = IngestionAgent().execute(payload)
-    status_code = 400 if "error" in result else 200
-    return jsonify(result), status_code
+    if "error" in result:
+        return api_error(
+            result["error"],
+            result.get("status_code", 400),
+            result.get("code", "visit_submission_failed"),
+            result.get("details"),
+        )
+    return jsonify(result), 200
 
 
 @app.post("/api/visit/<int:visit_id>/verify")
 def verify_visit(visit_id):
     result = VerificationAgent().execute(visit_id)
-    status_code = 404 if result.get("error") == "Visit not found" else 200
-    return jsonify(result), status_code
+    if "error" in result:
+        return api_error(
+            result["error"],
+            result.get("status_code", 400),
+            result.get("code", "visit_verification_failed"),
+            result.get("details"),
+        )
+    return jsonify(result), 200
 
 
 @app.post("/api/predict")
 def predict_zones():
     result = PredictionAgent().execute()
+    if isinstance(result, dict) and result.get("error"):
+        return api_error(
+            result["error"],
+            result.get("status_code", 500),
+            result.get("code", "prediction_failed"),
+            result.get("details"),
+        )
     return jsonify(result)
 
 
@@ -229,8 +308,14 @@ def chat():
     query = payload.get("query", "").strip()
     language = payload.get("language", "english")
     if not query:
-        return jsonify({"error": "Query is required"}), 400
+        return api_error("Query is required", 400, "missing_query")
     result = SupervisorAgent().execute(query=query, language=language)
+    if result.get("error"):
+        return api_error(
+            result["error"],
+            result.get("status_code", 500),
+            result.get("code", "chat_failed"),
+        )
     return jsonify(result)
 
 
@@ -279,7 +364,7 @@ def worker_detail(worker_id):
     try:
         worker = session.get(HealthWorker, worker_id)
         if not worker:
-            return jsonify({"error": "Worker not found"}), 404
+            return api_error("Worker not found", 404, "worker_not_found")
         visits = (
             session.query(Visit)
             .filter(Visit.worker_id == worker_id)

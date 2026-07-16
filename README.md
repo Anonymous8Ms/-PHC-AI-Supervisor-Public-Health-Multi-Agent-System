@@ -4,7 +4,8 @@ PHC AI Supervisor is a public health multi-agent system for rural field monitori
 
 ## Stack
 
-- Python 3.10+, Flask, SQLAlchemy, SQLite
+- Python 3.10+, Flask, SQLAlchemy
+- SQLite by default, with optional `DATABASE_URL` support for PostgreSQL deployments
 - Vanilla HTML, CSS, JavaScript
 - Google Gemini 1.5 Flash via `google-generativeai`
 - Railway-compatible deployment with optional Docker support
@@ -39,6 +40,8 @@ Use a `.env` file:
 GEMINI_API_KEY=your_gemini_api_key_here
 FLASK_PORT=5000
 FLASK_DEBUG=True
+DATABASE_URL=
+GEMINI_TIMEOUT_SECONDS=8
 ```
 
 ## Demo Data
@@ -61,9 +64,22 @@ pytest
 Covered areas:
 
 - `/api/health` and `/api/dashboard`
+- worker, zone, alert, and prediction endpoints
 - visit submission and verification
 - prediction fallback behavior
 - supervisor chat scope protection
+- seeded model counts and relationships
+
+## CI/CD
+
+GitHub Actions is included in [.github/workflows/ci.yml](/Users/anuttamams/Documents/AI%20Agent%20Builder/health-agent/.github/workflows/ci.yml).
+
+It runs:
+
+- critical lint checks with Ruff
+- Python compilation checks
+- pytest on Python 3.10 and 3.11
+- Docker image build validation on every push and pull request
 
 ## Docker
 
@@ -99,3 +115,4 @@ docker run -p 5000:5000 --env-file .env phc-ai-supervisor
 - Railway can run the app with `python app.py`
 - The app reads `PORT` automatically for hosted deployment
 - SQLite persistence works best with a mounted Railway volume
+- For a production-grade database, set `DATABASE_URL` to a PostgreSQL connection string
