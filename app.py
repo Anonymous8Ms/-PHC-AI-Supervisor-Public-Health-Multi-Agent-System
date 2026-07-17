@@ -12,7 +12,7 @@ from agents import IngestionAgent, PredictionAgent, SupervisorAgent, Verificatio
 from config import FLASK_DEBUG, FLASK_PORT
 from database import NORMALIZED_DATABASE_URL, SessionLocal, init_db
 from demo_data import generate_demo_data
-from models import Alert, HealthWorker, Household, PHC, Visit
+from models import Alert, HealthWorker, Household, Visit
 
 
 BASE_DIR = Path(__file__).resolve().parent
